@@ -1,10 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
 import { ArrowUpRight, Globe, LucideLayoutDashboard, Server } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coatOfArms from "@/assets/ghana-coat-of-arms.png";
 import { ContactDialog } from "@/components/contact-dialog";
-import { HelpDialog } from "@/components/help-dialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,27 +31,25 @@ const cards = [
   {
     title: "Public Portal",
     description: "Visit the official public DDDP portal.",
-    href: "https://dddp.aoinnovations.org/",
+    href: "https://dddppublicportal.aoholdings.net/",
     icon: Globe,
   },
 ];
 
 const navLinks = [
-  { label: "Help", action: "help" as const },
+  { label: "Help", to: "/help" },
   { label: "Contact", action: "contact" as const },
-];
+] as const;
 
 function Index() {
   const [contactOpen, setContactOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const modalOpen = contactOpen || helpOpen;
 
   return (
     <>
     <main
       className={cn(
         "h-screen w-screen overflow-hidden flex flex-col items-center justify-center px-6 py-10 relative",
-        modalOpen && "pointer-events-none",
+        contactOpen && "pointer-events-none",
       )}
       style={{ background: "var(--gradient-bg)" }}
     >
@@ -85,15 +82,19 @@ function Index() {
                 |
               </span>
             )}
-            <button
-              type="button"
-              onClick={() =>
-                link.action === "help" ? setHelpOpen(true) : setContactOpen(true)
-              }
-              className="top-nav-link font-medium"
-            >
-              {link.label}
-            </button>
+            {"to" in link ? (
+              <Link to={link.to} className="top-nav-link font-medium">
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setContactOpen(true)}
+                className="top-nav-link font-medium"
+              >
+                {link.label}
+              </button>
+            )}
           </Fragment>
         ))}
       </nav>
@@ -103,9 +104,11 @@ function Index() {
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           Welcome
         </div>
+
         <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-foreground leading-[1.05]">
           DDDP <span className="text-accent">Portal</span> Hub
         </h1>
+        
         {/* <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
           District Development Data Plaform </p> */}
         <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
@@ -153,7 +156,6 @@ function Index() {
     </main>
 
     <ContactDialog open={contactOpen} onOpenChange={setContactOpen} />
-    <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </>
   );
 }
