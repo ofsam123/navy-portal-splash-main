@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ContactDialog } from "@/components/contact-dialog";
 import {
   ChatbotSection,
+  ClientHomeSection,
   DashboardSection,
   GlobalSearchSection,
   KnowledgeBaseSection,
@@ -14,7 +15,6 @@ import {
   NotificationsSection,
   TicketsSection,
   UsersSection,
-  VisitorHomeSection,
 } from "@/components/help-desk/help-desk-sections";
 import { HelpDeskProvider, useHelpDesk } from "@/lib/help-desk/store";
 import { useHelpDeskTheme } from "@/lib/help-desk/theme";
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import coatOfArms from "@/assets/ghana-coat-of-arms.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Toaster } from "@/components/ui/sonner";
 
 function HelpDeskShell() {
   const [section, setSection] = useState<HelpSection>("home");
@@ -44,7 +45,7 @@ function HelpDeskShell() {
       setUser({ name: "Admin" });
       setSection("dashboard");
     } else {
-      if (state.user.name === "Admin") setUser({ name: "Visitor" });
+      if (state.user.name === "Admin") setUser({ name: "Client" });
       setSection("home");
     }
     setMobileNav(false);
@@ -64,7 +65,7 @@ function HelpDeskShell() {
     switch (section) {
       case "home":
         return (
-          <VisitorHomeSection onNavigate={navigate} />
+          <ClientHomeSection onNavigate={navigate} />
         );
       case "search":
         return <GlobalSearchSection query={globalQuery} />;
@@ -86,7 +87,7 @@ function HelpDeskShell() {
         return <UsersSection />;
       default:
         return isAdmin ? <DashboardSection /> : (
-          <VisitorHomeSection onNavigate={navigate} />
+          <ClientHomeSection onNavigate={navigate} />
         );
     }
   };
@@ -162,13 +163,13 @@ function HelpDeskShell() {
                 >
                   <button
                     type="button"
-                    onClick={() => switchRole("visitor")}
+                    onClick={() => switchRole("client")}
                     className={cn(
                       "rounded-full px-2.5 py-1 font-medium transition-colors",
                       !isAdmin ? "help-desk-role-active" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    Visitor
+                    Client
                   </button>
                   <button
                     type="button"
@@ -249,6 +250,7 @@ function HelpDeskShell() {
       </div>
 
       <ContactDialog open={contactOpen} onOpenChange={setContactOpen} />
+      <Toaster position="top-right" richColors />
     </>
   );
 }

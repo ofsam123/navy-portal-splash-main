@@ -1,4 +1,4 @@
-export type UserRole = "visitor" | "admin";
+export type UserRole = "client" | "admin";
 
 export type HelpSection =
   | "home"
@@ -31,6 +31,8 @@ export type Tutorial = {
   steps: string[];
   hasVideo: boolean;
   downloadable: boolean;
+  videoUrl?: string;
+  videoDuration?: string;
 };
 
 export type TicketPriority = "low" | "medium" | "high";
@@ -60,18 +62,24 @@ export type ChatMessage = {
 
 export type ThreadMessage = {
   id: string;
-  from: "visitor" | "admin";
+  from: "client" | "admin";
   text: string;
   at: string;
 };
 
+export type NotificationType = "ticket" | "message" | "system" | "educational";
+
 export type Notification = {
   id: string;
-  type: "ticket" | "message" | "system";
+  type: NotificationType;
   title: string;
   body: string;
   read: boolean;
   at: string;
+  recipientRole?: UserRole;
+  tutorialId?: string;
+  videoUrl?: string;
+  ctaLabel?: string;
 };
 
 export type UserProfile = {

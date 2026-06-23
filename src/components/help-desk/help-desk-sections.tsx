@@ -28,16 +28,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { getBotReply } from "@/lib/help-desk/chatbot";
 import { runGlobalSearch } from "@/lib/help-desk/search";
 import { KB_ARTICLES, TICKET_CATEGORIES, TUTORIALS } from "@/lib/help-desk/seed";
-import { useHelpDesk } from "@/lib/help-desk/store";
-import type { HelpSection, KBArticle, TicketPriority, TicketStatus, UserRole } from "@/lib/help-desk/types";
+import { notificationForRole, useHelpDesk } from "@/lib/help-desk/store";
+import type { HelpSection, KBArticle, Notification, TicketPriority, TicketStatus, UserRole } from "@/lib/help-desk/types";
 import { cn } from "@/lib/utils";
+import { TutorialPlayer } from "@/components/help-desk/tutorial-player";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function DashboardSection() {
-  const { state, isAdmin } = useHelpDesk();
+  const { state, isAdmin, broadcastEducationalAlert } = useHelpDesk();
   const open = state.tickets.filter((t) => t.status === "open" || t.status === "in_progress").length;
   const closed = state.tickets.filter((t) => t.status === "closed" || t.status === "resolved").length;
   const kbTotal = Object.values(state.kbViews).reduce((a, b) => a + b, 0);
-  const visitorMessages = state.thread.filter((m) => m.from === "visitor").length;
+  const clientMessages = state.thread.filter((m) => m.from === "client").length;
   const topArticles = Object.entries(state.kbViews)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
@@ -50,7 +52,7 @@ export function DashboardSection() {
         title="Dashboard"
         description={
           isAdmin
-            ? "Receive and manage visitor tickets, messages, and platform activity."
+            ? "Receive and manage client tickets, messages, and platform activity."
             : "Find answers in the knowledge hub, chat with the assistant, or reach admin support."
         }
       />
@@ -58,7 +60,7 @@ export function DashboardSection() {
         <Stat label="Open tickets" value={String(open)} />
         <Stat label="Closed tickets" value={String(closed)} />
         {isAdmin ? (
-          <Stat label="Visitor messages" value={String(visitorMessages)} />
+          <Stat label="Client messages" value={String(clientMessages)} />
         ) : (
           <Stat label="KB article views" value={String(kbTotal)} />
         )}
@@ -102,15 +104,53 @@ export function DashboardSection() {
           business days. Live analytics connect when your organisation enables the backend API.
         </p>
       </Panel>
+      {isAdmin && (
+        <Panel>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Educational alerts</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Notify clients about system updates or new features. Alerts can include short instructional
+            videos from the Learning Center.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TUTORIALS.filter((t) => t.hasVideo && t.videoUrl).map((tutorial) => (
+              <Button
+                key={tutorial.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  broadcastEducationalAlert(
+                    tutorial.id,
+                    `We've updated the platform. Watch "${tutorial.title}" to see what's new.`,
+                  )
+                }
+              >
+                <Video className="h-3.5 w-3.5 mr-1.5" />
+                Alert: {tutorial.title}
+              </Button>
+            ))}
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }
 
-export function VisitorHomeSection({
+export function ClientHomeSection({
   onNavigate,
 }: {
   onNavigate: (section: HelpSection) => void;
 }) {
+  const { state } = useHelpDesk();
+  const [videoAlert, setVideoAlert] = useState<Notification | null>(null);
+  const latestEducational = state.notifications.find(
+    (n) =>
+      n.type === "educational" &&
+      !n.read &&
+      notificationForRole(n, state.user.role) &&
+      n.videoUrl,
+  );
+
   const quickLinks = [
     {
       label: "Knowledge Base",
@@ -140,6 +180,36 @@ export function VisitorHomeSection({
 
   return (
     <div className="space-y-10 pb-8">
+      {latestEducational && (
+        <Alert className="max-w-3xl mx-auto border-accent/30 bg-accent/5">
+          <GraduationCap className="h-4 w-4" />
+          <AlertTitle>{latestEducational.title}</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>{latestEducational.body}</span>
+            <div className="flex gap-2 shrink-0">
+              {latestEducational.videoUrl && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setVideoAlert(latestEducational)}
+                >
+                  <Video className="h-3.5 w-3.5 mr-1.5" />
+                  {latestEducational.ctaLabel ?? "Watch video"}
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onNavigate("notifications")}
+              >
+                View alerts
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="help-desk-hero max-w-2xl mx-auto">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
           DDDP Knowledge Hub
@@ -191,6 +261,16 @@ export function VisitorHomeSection({
           ))}
         </ul>
       </div>
+
+      {videoAlert?.videoUrl && (
+        <TutorialPlayer
+          open={!!videoAlert}
+          onOpenChange={(open) => !open && setVideoAlert(null)}
+          title={videoAlert.title}
+          description={videoAlert.body}
+          videoUrl={videoAlert.videoUrl}
+        />
+      )}
     </div>
   );
 }
@@ -417,6 +497,9 @@ export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: str
 export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [activeVideo, setActiveVideo] = useState<{ title: string; summary: string; url: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -473,17 +556,42 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
               </div>
             </button>
             {expanded === tut.id && (
-              <ol className="border-t border-border/30 px-4 pb-4 pt-3 space-y-2 list-decimal list-inside text-sm text-muted-foreground">
-                {tut.steps.map((step, i) => (
-                  <li key={i} className="leading-relaxed">
-                    {step}
-                  </li>
-                ))}
-              </ol>
+              <div className="border-t border-border/30 px-4 pb-4 pt-3 space-y-3">
+                {tut.hasVideo && tut.videoUrl && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setActiveVideo({ title: tut.title, summary: tut.summary, url: tut.videoUrl! })
+                    }
+                  >
+                    <Video className="h-3.5 w-3.5 mr-1.5" />
+                    Watch tutorial{tut.videoDuration ? ` (${tut.videoDuration})` : ""}
+                  </Button>
+                )}
+                <ol className="space-y-2 list-decimal list-inside text-sm text-muted-foreground">
+                  {tut.steps.map((step, i) => (
+                    <li key={i} className="leading-relaxed">
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
           </li>
         ))}
       </ul>
+
+      {activeVideo && (
+        <TutorialPlayer
+          open={!!activeVideo}
+          onOpenChange={(open) => !open && setActiveVideo(null)}
+          title={activeVideo.title}
+          description={activeVideo.summary}
+          videoUrl={activeVideo.url}
+        />
+      )}
     </div>
   );
 }
@@ -593,7 +701,7 @@ export function TicketsSection() {
         title="Help Desk / Ticketing"
         description={
           isAdmin
-            ? "Receive visitor support requests, assign priority, and update ticket status."
+            ? "Receive client support requests, assign priority, and update ticket status."
             : "Submit a support request and track its status."
         }
       />
@@ -643,11 +751,11 @@ export function TicketsSection() {
       )}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">
-          {isAdmin ? "All visitor tickets" : "Your tickets"}
+          {isAdmin ? "All client tickets" : "Your tickets"}
         </h3>
         {visibleTickets.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {isAdmin ? "No visitor tickets yet." : "No tickets yet."}
+            {isAdmin ? "No client tickets yet." : "No tickets yet."}
           </p>
         ) : (
           <ul className="divide-y divide-border/40 border border-border/40 rounded-xl help-desk-panel overflow-hidden">
@@ -691,8 +799,8 @@ export function MessagingSection() {
   const { state, sendThreadMessage, isAdmin } = useHelpDesk();
   const [text, setText] = useState("");
 
-  const isOwnMessage = (from: "visitor" | "admin") =>
-    (isAdmin && from === "admin") || (!isAdmin && from === "visitor");
+  const isOwnMessage = (from: "client" | "admin") =>
+    (isAdmin && from === "admin") || (!isAdmin && from === "client");
 
   return (
     <div className="space-y-4 flex flex-col h-[min(70vh,640px)]">
@@ -700,7 +808,7 @@ export function MessagingSection() {
         title="Internal Messaging"
         description={
           isAdmin
-            ? "Receive visitor messages and reply as admin."
+            ? "Receive client messages and reply as admin."
             : "Send messages to admin support. Replies appear in this thread."
         }
       />
@@ -709,7 +817,7 @@ export function MessagingSection() {
           {state.thread.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {isAdmin
-                ? "No visitor messages yet."
+                ? "No client messages yet."
                 : "No messages yet. Ask admin a question to get started."}
             </p>
           ) : (
@@ -724,7 +832,7 @@ export function MessagingSection() {
                 )}
               >
                 <p className="text-xs opacity-70 mb-1">
-                  {m.from === "visitor" ? "Visitor" : "Admin"}
+                  {m.from === "client" ? "Client" : "Admin"}
                   {isOwnMessage(m.from) ? " (you)" : ""}
                 </p>
                 <p>{m.text}</p>
@@ -737,7 +845,7 @@ export function MessagingSection() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (sendThreadMessage(text), setText(""))}
-            placeholder={isAdmin ? "Reply to visitor…" : "Message admin…"}
+            placeholder={isAdmin ? "Reply to client…" : "Message admin…"}
             className="bg-background/50"
           />
           <Button
@@ -759,43 +867,87 @@ export function MessagingSection() {
 
 export function NotificationsSection() {
   const { state, markNotificationRead, markAllNotificationsRead } = useHelpDesk();
+  const [videoAlert, setVideoAlert] = useState<Notification | null>(null);
+
+  const visibleNotifications = state.notifications.filter((n) =>
+    notificationForRole(n, state.user.role),
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <SectionHeader
-          title="Notifications"
-          description="In-app alerts for tickets, messages, and system updates."
+          title="Notifications & alerts"
+          description="In-app alerts for tickets, messages, system updates, and educational guides with videos."
         />
         <Button variant="outline" size="sm" onClick={markAllNotificationsRead}>
           Mark all read
         </Button>
       </div>
       <ul className="divide-y divide-border/40 border border-border/40 rounded-xl help-desk-panel overflow-hidden">
-        {state.notifications.length === 0 ? (
+        {visibleNotifications.length === 0 ? (
           <li className="p-6 text-sm text-muted-foreground">No notifications.</li>
         ) : (
-          state.notifications.map((n) => (
+          visibleNotifications.map((n) => (
             <li
               key={n.id}
               className={cn(
-                "px-4 py-3 cursor-pointer hover:bg-accent/5",
+                "px-4 py-3",
                 !n.read && "bg-accent/5",
               )}
-              onClick={() => markNotificationRead(n.id)}
             >
-              <p className="font-medium text-foreground text-sm">{n.title}</p>
-              <p className="text-sm text-muted-foreground mt-0.5">{n.body}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                {new Date(n.at).toLocaleString()} · {n.type}
-              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div
+                  className="flex-1 cursor-pointer"
+                  onClick={() => markNotificationRead(n.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground text-sm">{n.title}</p>
+                    {n.type === "educational" && (
+                      <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                        Guide
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">{n.body}</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    {new Date(n.at).toLocaleString()} · {n.type}
+                  </p>
+                </div>
+                {n.type === "educational" && n.videoUrl && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      markNotificationRead(n.id);
+                      setVideoAlert(n);
+                    }}
+                  >
+                    <Video className="h-3.5 w-3.5 mr-1.5" />
+                    {n.ctaLabel ?? "Watch video"}
+                  </Button>
+                )}
+              </div>
             </li>
           ))
         )}
       </ul>
       <p className="text-xs text-muted-foreground">
-        Email notifications can be enabled when your organisation connects SMTP settings to the platform.
+        Educational alerts help clients learn new features. Admins can broadcast updates with
+        instructional videos from the dashboard.
       </p>
+
+      {videoAlert?.videoUrl && (
+        <TutorialPlayer
+          open={!!videoAlert}
+          onOpenChange={(open) => !open && setVideoAlert(null)}
+          title={videoAlert.title}
+          description={videoAlert.body}
+          videoUrl={videoAlert.videoUrl}
+        />
+      )}
     </div>
   );
 }
@@ -805,14 +957,14 @@ export function UsersSection() {
 
   const roles: { id: UserRole; label: string; desc: string }[] = [
     {
-      id: "visitor",
-      label: "Visitor",
+      id: "client",
+      label: "Client",
       desc: "Access the knowledge hub, AI chatbot, submit tickets, and message admin.",
     },
     {
       id: "admin",
       label: "Admin",
-      desc: "Receive visitor tickets and messages, update status, and reply to visitors.",
+      desc: "Receive client tickets and messages, update status, reply to clients, and send educational alerts.",
     },
   ];
 
@@ -820,13 +972,13 @@ export function UsersSection() {
     <div className="space-y-6">
       <SectionHeader
         title="Account & role"
-        description="Visitors use self-service tools. Admins receive and manage support requests."
+        description="Clients use self-service tools. Admins receive and manage support requests."
       />
       <Panel>
         <p className="text-sm text-muted-foreground">
           Signed in as{" "}
           <span className="font-medium text-foreground capitalize">{state.user.role}</span>
-          {isAdmin ? " — you can manage incoming visitor requests." : " — browse help resources or contact admin."}
+          {isAdmin ? " — you can manage incoming client requests." : " — browse help resources or contact admin."}
         </p>
       </Panel>
       <form
@@ -856,7 +1008,7 @@ export function UsersSection() {
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Switch role (demo)</h3>
         <p className="text-xs text-muted-foreground">
-          In production, visitors and admins would sign in separately. Use this to preview each experience.
+          In production, clients and admins would sign in separately. Use this to preview each experience.
         </p>
         {roles.map((r) => (
           <button
@@ -865,6 +1017,7 @@ export function UsersSection() {
             onClick={() => {
               setRole(r.id);
               if (r.id === "admin") setUser({ name: "Admin" });
+              else if (state.user.name === "Admin") setUser({ name: "Client" });
             }}
             className={cn(
               "help-desk-panel w-full text-left p-4 transition-colors",
@@ -884,10 +1037,10 @@ export function getNavItems(isAdmin: boolean) {
   if (isAdmin) {
     return ADMIN_NAV_ITEMS;
   }
-  return VISITOR_NAV_ITEMS;
+  return CLIENT_NAV_ITEMS;
 }
 
-export const VISITOR_NAV_ITEMS: { id: HelpSection; label: string }[] = [
+export const CLIENT_NAV_ITEMS: { id: HelpSection; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "knowledge", label: "Knowledge Base" },
   { id: "learning", label: "Learning Center" },

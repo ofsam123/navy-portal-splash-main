@@ -24,14 +24,15 @@ const cards = [
   },
   {
     title: "DDDP Backend",
-    description: "Manage and configure the DDDP backend portal.",
+    description: "Manage, Configure and do extensive analysis on DDDP.",
     href: "https://dddp.gov.gh/",
     icon: Server,
   },
   {
     title: "Public Portal",
     description: "Visit the official public DDDP portal.",
-    href: "https://dddppublicportal.aoholdings.net/",
+    // href: "https://dddppublicportal.aoholdings.net/",
+    href: "https://dddp.aoinnovations.org/",
     icon: Globe,
   },
 ];
@@ -106,14 +107,14 @@ function Index() {
         </div>
 
         <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-foreground leading-[1.05]">
-          DDDP <span className="text-accent">Portal</span> Hub
+          District Development Data Platform <span className="text-accent">(DDDP)</span>
         </h1>
         
         {/* <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
           District Development Data Plaform </p> */}
         <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
-          This portal serves as a centralized gateway that brings District Development Data Platform Services into one place, 
-          allowing users to easily access appropriate official data.
+          This portal serves as a centralized platform that brings district development data services into one place, 
+          allowing users to easily access appropriate official data Nationwide.
         </p>
       </header>
 

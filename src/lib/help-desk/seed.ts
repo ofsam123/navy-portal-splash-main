@@ -64,6 +64,8 @@ export const TUTORIALS: Tutorial[] = [
     summary: "Step-by-step sign-in for first-time users.",
     hasVideo: true,
     downloadable: true,
+    videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    videoDuration: "1:30",
     steps: [
       "Open the DDDP Frontend card from the Portal Hub.",
       "Click Sign in and enter your organisation email.",
@@ -90,6 +92,8 @@ export const TUTORIALS: Tutorial[] = [
     summary: "Create and track support requests from this Help Desk.",
     hasVideo: true,
     downloadable: false,
+    videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    videoDuration: "2:15",
     steps: [
       "Go to Help Desk → Tickets.",
       "Fill in subject, category, and description.",

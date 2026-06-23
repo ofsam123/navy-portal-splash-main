@@ -6,7 +6,9 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 
+import { TUTORIALS } from "./seed";
 import type {
   ChatMessage,
   HelpDeskState,
@@ -20,7 +22,7 @@ import type {
 const STORAGE_KEY = "dddp-help-desk-v1";
 
 const defaultState: HelpDeskState = {
-  user: { name: "Visitor", email: "", role: "visitor" },
+  user: { name: "Client", email: "", role: "client" },
   tickets: [],
   thread: [],
   notifications: [
@@ -31,6 +33,30 @@ const defaultState: HelpDeskState = {
       body: "Search the knowledge base, chat with the assistant, or open a ticket anytime.",
       read: false,
       at: new Date().toISOString(),
+    },
+    {
+      id: "edu-messaging-update",
+      type: "educational",
+      title: "Messaging update: Client support thread",
+      body: "We've refreshed internal messaging. Watch a short guide on contacting admin and tracking replies.",
+      read: false,
+      at: new Date().toISOString(),
+      recipientRole: "client",
+      tutorialId: "tut-3",
+      videoUrl: TUTORIALS.find((t) => t.id === "tut-3")?.videoUrl,
+      ctaLabel: "Watch guide",
+    },
+    {
+      id: "edu-admin-dashboard",
+      type: "educational",
+      title: "Admin tip: Broadcast system updates",
+      body: "Use the dashboard to send educational alerts with instructional videos when features change.",
+      read: false,
+      at: new Date().toISOString(),
+      recipientRole: "admin",
+      tutorialId: "tut-1",
+      videoUrl: TUTORIALS.find((t) => t.id === "tut-1")?.videoUrl,
+      ctaLabel: "Preview client video",
     },
   ],
   chat: [
@@ -47,19 +73,41 @@ const defaultState: HelpDeskState = {
 let memoryState: HelpDeskState = loadState();
 const listeners = new Set<() => void>();
 
+function migrateRole(role: string): UserRole {
+  if (role === "admin") return "admin";
+  return "client";
+}
+
+function migrateMessageFrom(from: string): ThreadMessage["from"] {
+  if (from === "admin" || from === "agent") return "admin";
+  return "client";
+}
+
 function normalizeState(parsed: Partial<HelpDeskState>): HelpDeskState {
   const merged = { ...defaultState, ...parsed };
-  if ((merged.user.role as string) === "agent") {
-    merged.user = { ...merged.user, role: "admin" };
-  }
-  merged.thread = merged.thread.map((m) =>
-    (m as ThreadMessage & { from: string }).from === "agent"
-      ? { ...m, from: "admin" as const }
-      : m,
-  );
+  merged.user = {
+    ...merged.user,
+    role: migrateRole(merged.user.role as string),
+    name:
+      merged.user.name === "Visitor"
+        ? "Client"
+        : merged.user.name,
+  };
+  merged.thread = merged.thread.map((m) => ({
+    ...m,
+    from: migrateMessageFrom((m as ThreadMessage & { from: string }).from),
+  }));
   merged.tickets = merged.tickets.map((t) => ({
     ...t,
-    submittedBy: t.submittedBy ?? "Visitor",
+    submittedBy: t.submittedBy === "Visitor" ? "Client" : (t.submittedBy ?? "Client"),
+  }));
+  merged.notifications = merged.notifications.map((n) => ({
+    ...n,
+    title: n.title.replace(/Visitor/g, "Client"),
+    body: n.body.replace(/visitor/g, "client").replace(/Visitor/g, "Client"),
+    recipientRole: n.recipientRole
+      ? migrateRole(n.recipientRole as string)
+      : n.recipientRole,
   }));
   return merged as HelpDeskState;
 }
@@ -96,6 +144,13 @@ function uid(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+export function notificationForRole(
+  notification: Notification,
+  role: UserRole,
+): boolean {
+  return !notification.recipientRole || notification.recipientRole === role;
+}
+
 type HelpDeskContextValue = {
   state: HelpDeskState;
   setUser: (patch: Partial<UserProfile>) => void;
@@ -105,6 +160,7 @@ type HelpDeskContextValue = {
   sendThreadMessage: (text: string) => void;
   addChatMessage: (msg: Omit<ChatMessage, "id" | "at">) => void;
   pushNotification: (n: Omit<Notification, "id" | "at" | "read">) => void;
+  broadcastEducationalAlert: (tutorialId: string, body?: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   recordKbView: (articleId: string) => void;
@@ -128,7 +184,43 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
   const pushNotification = useCallback((n: Omit<Notification, "id" | "at" | "read">) => {
     const note: Notification = { ...n, id: uid("n"), read: false, at: new Date().toISOString() };
     persist({ ...getSnapshot(), notifications: [note, ...getSnapshot().notifications] });
+
+    const { user } = getSnapshot();
+    if (
+      n.type === "educational" &&
+      notificationForRole(note, user.role) &&
+      typeof window !== "undefined"
+    ) {
+      toast(n.title, {
+        description: n.body,
+        duration: 8000,
+      });
+    }
   }, []);
+
+  const broadcastEducationalAlert = useCallback(
+    (tutorialId: string, body?: string) => {
+      const tutorial = TUTORIALS.find((t) => t.id === tutorialId);
+      if (!tutorial) return;
+
+      pushNotification({
+        type: "educational",
+        title: `System update: ${tutorial.title}`,
+        body:
+          body ??
+          `A new feature guide is available. Watch the short video to learn what's changed.`,
+        recipientRole: "client",
+        tutorialId: tutorial.id,
+        videoUrl: tutorial.videoUrl,
+        ctaLabel: "Watch tutorial",
+      });
+
+      toast.success("Educational alert sent to all clients", {
+        description: tutorial.title,
+      });
+    },
+    [pushNotification],
+  );
 
   const addTicket = useCallback(
     (ticket: Omit<Ticket, "id" | "createdAt" | "updatedAt" | "status" | "assignee">) => {
@@ -149,6 +241,7 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
         type: "ticket",
         title: "New support request",
         body: `${created.submittedBy} submitted: "${created.subject}"`,
+        recipientRole: "admin",
       });
       return created;
     },
@@ -167,6 +260,7 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
           type: "ticket",
           title: "Ticket updated",
           body: `"${ticket.subject}" is now ${status.replace("_", " ")}.`,
+          recipientRole: "client",
         });
       }
     },
@@ -178,7 +272,7 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
       const trimmed = text.trim();
       if (!trimmed) return;
       const { user } = getSnapshot();
-      const from: ThreadMessage["from"] = user.role === "admin" ? "admin" : "visitor";
+      const from: ThreadMessage["from"] = user.role === "admin" ? "admin" : "client";
       const msg: ThreadMessage = {
         id: uid("m"),
         from,
@@ -189,17 +283,19 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
         ...getSnapshot(),
         thread: [...getSnapshot().thread, msg],
       });
-      if (from === "visitor") {
+      if (from === "client") {
         pushNotification({
           type: "message",
-          title: "Visitor message",
+          title: "Client message",
           body: `${user.name} sent a message — open Messaging to reply.`,
+          recipientRole: "admin",
         });
       } else {
         pushNotification({
           type: "message",
           title: "Admin reply sent",
-          body: "Your response was delivered to the visitor.",
+          body: "Your response was delivered to the client.",
+          recipientRole: "client",
         });
       }
     },
@@ -221,9 +317,12 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAllNotificationsRead = useCallback(() => {
+    const { user, notifications } = getSnapshot();
     persist({
       ...getSnapshot(),
-      notifications: getSnapshot().notifications.map((n) => ({ ...n, read: true })),
+      notifications: notifications.map((n) =>
+        notificationForRole(n, user.role) ? { ...n, read: true } : n,
+      ),
     });
   }, []);
 
@@ -233,8 +332,9 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const unreadCount = useMemo(
-    () => state.notifications.filter((n) => !n.read).length,
-    [state.notifications],
+    () =>
+      state.notifications.filter((n) => !n.read && notificationForRole(n, state.user.role)).length,
+    [state.notifications, state.user.role],
   );
 
   const isAdmin = state.user.role === "admin";
@@ -249,6 +349,7 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
       sendThreadMessage,
       addChatMessage,
       pushNotification,
+      broadcastEducationalAlert,
       markNotificationRead,
       markAllNotificationsRead,
       recordKbView,
@@ -264,6 +365,7 @@ export function HelpDeskProvider({ children }: { children: ReactNode }) {
       sendThreadMessage,
       addChatMessage,
       pushNotification,
+      broadcastEducationalAlert,
       markNotificationRead,
       markAllNotificationsRead,
       recordKbView,
