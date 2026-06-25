@@ -500,3 +500,25 @@
   border-color: oklch(0.45 0.14 250 / 0.35);
 }
 
+.help-desk-action-btn {
+  background: var(--help-accent) !important;
+  border-color: var(--help-accent) !important;
+  color: oklch(1 0 0) !important;
+  box-shadow: 0 1px 2px oklch(0.2 0.03 265 / 0.12);
+}
+
+.help-desk-action-btn:hover {
+  background: oklch(0.38 0.14 250) !important;
+  border-color: oklch(0.38 0.14 250) !important;
+  color: oklch(1 0 0) !important;
+}
+
+.help-desk-dark .help-desk-action-btn:hover {
+  background: oklch(0.65 0.15 230) !important;
+  border-color: oklch(0.65 0.15 230) !important;
+}
+
+.help-desk-action-btn svg {
+  color: oklch(1 0 0) !important;
+}
+

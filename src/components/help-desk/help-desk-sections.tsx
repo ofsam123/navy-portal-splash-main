@@ -116,8 +116,8 @@ export function DashboardSection() {
               <Button
                 key={tutorial.id}
                 type="button"
-                variant="outline"
                 size="sm"
+                className="help-desk-action-btn"
                 onClick={() =>
                   broadcastEducationalAlert(
                     tutorial.id,
@@ -191,6 +191,7 @@ export function ClientHomeSection({
                 <Button
                   type="button"
                   size="sm"
+                  className="help-desk-action-btn"
                   onClick={() => setVideoAlert(latestEducational)}
                 >
                   <Video className="h-3.5 w-3.5 mr-1.5" />
@@ -200,7 +201,7 @@ export function ClientHomeSection({
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                className="help-desk-action-btn"
                 onClick={() => onNavigate("notifications")}
               >
                 View alerts
@@ -561,7 +562,7 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
+                    className="help-desk-action-btn"
                     onClick={() =>
                       setActiveVideo({ title: tut.title, summary: tut.summary, url: tut.videoUrl! })
                     }
@@ -880,7 +881,7 @@ export function NotificationsSection() {
           title="Notifications & alerts"
           description="In-app alerts for tickets, messages, system updates, and educational guides with videos."
         />
-        <Button variant="outline" size="sm" onClick={markAllNotificationsRead}>
+        <Button size="sm" className="help-desk-action-btn" onClick={markAllNotificationsRead}>
           Mark all read
         </Button>
       </div>
@@ -918,8 +919,7 @@ export function NotificationsSection() {
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    className="shrink-0"
+                    className="help-desk-action-btn shrink-0"
                     onClick={() => {
                       markNotificationRead(n.id);
                       setVideoAlert(n);
