@@ -91,18 +91,38 @@ const TOPIC_RULES: TopicRule[] = [
   },
   {
     pattern: /\bdpat\b/,
-    text: "DPAT is available from the national dashboard. These guides explain how to open it:",
-    search: "dpat dashboard",
+    text: "DPAT covers the national dashboard plus Tracker Capture programs, lists, and timeline progress updates:",
+    search: "dpat dashboard tracker timeline progress",
   },
   {
-    pattern: /bulk\s+load|timeline|relationship|tracker\s+capture|register.*(meeting|bill|boundary|capacity|community|complaint)|meeting\s+program|annual\s+action\s+plan/,
+    pattern: /map|coordinate|geo|location\s+pin|set\s+coordinates/,
+    text: "Here’s how to set site coordinates on the map:",
+    search: "maps coordinates capture",
+  },
+  {
+    pattern: /enrolment|enrollment|feedback\s+widget|tracker\s+dashboard|lists\s+tab/,
+    text: "The Tracker Dashboard widgets and how to open a registered project:",
+    search: "tracker dashboard enrolment profile",
+  },
+  {
+    pattern: /filter|search.*(project|program|tracker|activity)|ongoing|cancelled|terminated/,
+    text: "Search and status filters for Tracker Capture lists:",
+    search: "search filter lists ongoing completed",
+  },
+  {
+    pattern: /yellow|timeline\s+data|update\s+progress|complete\s+event|progress\s+of/,
+    text: "Update DPAT activity progress by completing Timeline Data Entry events:",
+    search: "timeline progress complete yellow",
+  },
+  {
+    pattern: /bulk\s+load|relationship|tracker\s+capture|register.*(meeting|bill|boundary|capacity|community|complaint|disaster|igf|pwd|school|permit)|meeting\s+program|annual\s+action\s+plan|igf|pwd|sanitation|street\s+naming|audit\s+issue/,
     text: "Tracker and Tracker Capture workflows are covered here:",
-    search: "trackers register timeline bulk",
+    search: "trackers register timeline catalog dashboard",
   },
   {
     pattern: /tracker/,
     text: "Here’s how to find, register, and manage Trackers in DDDP:",
-    search: "trackers register bulk timeline",
+    search: "trackers register catalog dashboard timeline",
   },
   {
     pattern: /export|report|district\s+data|dashboard/,
@@ -116,6 +136,18 @@ const TOPIC_RULES: TopicRule[] = [
     escalate: true,
   },
 ];
+
+function mergeById<T extends { id: string }>(primary: T[], secondary: T[], limit: number): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of [...primary, ...secondary]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
 
 function formatTutorialHints(tutorials: Tutorial[]): string {
   if (tutorials.length === 0) return "";
@@ -158,8 +190,8 @@ export function getBotReply(input: string): {
 
   for (const rule of TOPIC_RULES) {
     if (rule.pattern.test(lower)) {
-      const articles = searchArticles(rule.search);
-      const tutorials = searchTutorials(rule.search);
+      const articles = mergeById(searchArticles(input), searchArticles(rule.search), 5);
+      const tutorials = mergeById(searchTutorials(input), searchTutorials(rule.search), 4);
       return {
         text: `${rule.text}${formatTutorialHints(tutorials)}`,
         articles,
