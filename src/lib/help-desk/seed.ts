@@ -280,7 +280,7 @@ export const TUTORIALS: Tutorial[] = [
   {
     id: "tut-1",
     title: "How to log in to DDDP Frontend",
-    summary: "Step-by-step sign-in for first-time users.",
+    summary: "Step-by-step login / sign-in guide for first-time users.",
     hasVideo: true,
     downloadable: true,
     videoUrl: DEMO_VIDEO,

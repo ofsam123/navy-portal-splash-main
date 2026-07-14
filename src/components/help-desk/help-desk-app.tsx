@@ -30,6 +30,10 @@ function HelpDeskShell() {
   const [globalQuery, setGlobalQuery] = useState("");
   const [contactOpen, setContactOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  const [focusArticleId, setFocusArticleId] = useState<{ id: string; token: number } | null>(null);
+  const [focusTutorialId, setFocusTutorialId] = useState<{ id: string; token: number } | null>(
+    null,
+  );
   const { state, setRole, setUser, unreadCount, isAdmin } = useHelpDesk();
   const { isDark, toggle: toggleTheme } = useHelpDeskTheme();
   const navItems = getNavItems(isAdmin);
@@ -37,6 +41,18 @@ function HelpDeskShell() {
   const runSearch = (query: string) => {
     setGlobalQuery(query);
     if (query.trim()) setSection("search");
+  };
+
+  const openArticleFromChat = (id: string) => {
+    setFocusArticleId({ id, token: Date.now() });
+    setSection("knowledge");
+    setMobileNav(false);
+  };
+
+  const openTutorialFromChat = (id: string) => {
+    setFocusTutorialId({ id, token: Date.now() });
+    setSection("learning");
+    setMobileNav(false);
   };
 
   const switchRole = (role: UserRole) => {
@@ -64,19 +80,25 @@ function HelpDeskShell() {
   const renderSection = () => {
     switch (section) {
       case "home":
-        return (
-          <ClientHomeSection onNavigate={navigate} />
-        );
+        return <ClientHomeSection onNavigate={navigate} />;
       case "search":
         return <GlobalSearchSection query={globalQuery} />;
       case "dashboard":
         return <DashboardSection />;
       case "knowledge":
-        return <KnowledgeBaseSection initialQuery={globalQuery} />;
+        return <KnowledgeBaseSection initialQuery={globalQuery} focusArticleId={focusArticleId} />;
       case "learning":
-        return <LearningCenterSection initialQuery={globalQuery} />;
+        return (
+          <LearningCenterSection initialQuery={globalQuery} focusTutorialId={focusTutorialId} />
+        );
       case "chatbot":
-        return <ChatbotSection onGoTickets={goTickets} />;
+        return (
+          <ChatbotSection
+            onGoTickets={goTickets}
+            onOpenArticle={openArticleFromChat}
+            onOpenTutorial={openTutorialFromChat}
+          />
+        );
       case "tickets":
         return <TicketsSection />;
       case "messages":
@@ -86,9 +108,7 @@ function HelpDeskShell() {
       case "users":
         return <UsersSection />;
       default:
-        return isAdmin ? <DashboardSection /> : (
-          <ClientHomeSection onNavigate={navigate} />
-        );
+        return isAdmin ? <DashboardSection /> : <ClientHomeSection onNavigate={navigate} />;
     }
   };
 
@@ -166,7 +186,9 @@ function HelpDeskShell() {
                     onClick={() => switchRole("client")}
                     className={cn(
                       "rounded-full px-2.5 py-1 font-medium transition-colors",
-                      !isAdmin ? "help-desk-role-active" : "text-muted-foreground hover:text-foreground",
+                      !isAdmin
+                        ? "help-desk-role-active"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     Client
@@ -176,7 +198,9 @@ function HelpDeskShell() {
                     onClick={() => switchRole("admin")}
                     className={cn(
                       "rounded-full px-2.5 py-1 font-medium transition-colors",
-                      isAdmin ? "help-desk-role-active" : "text-muted-foreground hover:text-foreground",
+                      isAdmin
+                        ? "help-desk-role-active"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     Admin

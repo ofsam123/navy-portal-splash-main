@@ -55,14 +55,19 @@ type TopicRule = {
 
 const TOPIC_RULES: TopicRule[] = [
   {
-    pattern: /forgot|reset\s+password|recover(\s+password)?|password\s+recover/,
+    pattern: /forgot|reset\s+password|recover(\s+password)?|password\s+recover|\bpassword\b/,
     text: "Here’s how to recover a forgotten DDDP password, plus related guides:",
     search: "forgot password recovery",
   },
   {
-    pattern: /login|sign[\s-]?in|username|account|permission|access|password/,
-    text: "These articles cover signing in and account access. If you’re locked out, try password recovery or open an Account & access ticket.",
-    search: "login account permissions password",
+    pattern: /login|sign[\s-]?in|log\s*in/,
+    text: "Here’s how to sign in to DDDP. If you’re locked out, try password recovery instead.",
+    search: "login sign in",
+  },
+  {
+    pattern: /username|account|permission|access/,
+    text: "These articles cover account access and permissions. If you’re locked out, try password recovery or open an Account & access ticket.",
+    search: "account permissions access",
   },
   {
     pattern: /performance\s+setup|save\s+performance|indicator\s+setup/,
@@ -100,7 +105,8 @@ const TOPIC_RULES: TopicRule[] = [
     search: "maps coordinates event layer style",
   },
   {
-    pattern: /data\s+visualizer|create\s+a?\s*chart|chart\s+type|save\s+(diagram|chart|map)|main\s+dimensions|app\s+store/,
+    pattern:
+      /data\s+visualizer|create\s+a?\s*chart|chart\s+type|save\s+(diagram|chart|map)|main\s+dimensions|app\s+store/,
     text: "Reporting with Data Visualizer and saving diagrams is covered here:",
     search: "data visualizer chart save diagram reporting",
   },
@@ -120,7 +126,8 @@ const TOPIC_RULES: TopicRule[] = [
     search: "timeline progress complete yellow",
   },
   {
-    pattern: /bulk\s+load|relationship|tracker\s+capture|register.*(meeting|bill|boundary|capacity|community|complaint|disaster|igf|pwd|school|permit)|meeting\s+program|annual\s+action\s+plan|igf|pwd|sanitation|street\s+naming|audit\s+issue/,
+    pattern:
+      /bulk\s+load|relationship|tracker\s+capture|register.*(meeting|bill|boundary|capacity|community|complaint|disaster|igf|pwd|school|permit)|meeting\s+program|annual\s+action\s+plan|igf|pwd|sanitation|street\s+naming|audit\s+issue/,
     text: "Tracker and Tracker Capture workflows are covered here:",
     search: "trackers register timeline catalog dashboard",
   },
@@ -154,10 +161,16 @@ function mergeById<T extends { id: string }>(primary: T[], secondary: T[], limit
   return out;
 }
 
-function formatTutorialHints(tutorials: Tutorial[]): string {
+function formatTutorialHints(tutorials: Tutorial[], heading = "Other related tutorials"): string {
   if (tutorials.length === 0) return "";
   const lines = tutorials.map((t) => `• ${t.title}`).join("\n");
-  return `\n\nRelated Learning Center tutorials:\n${lines}`;
+  return `${heading}:\n${lines}`;
+}
+
+function formatStepsBlock(tutorial: Tutorial): string {
+  const steps = tutorial.steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
+  const videoNote = tutorial.hasVideo ? " A short video is available for this tutorial." : "";
+  return `Here are the steps — “${tutorial.title}”:\n\n${steps}\n\nOpen the full tutorial below for the video/PDF and to bookmark it.${videoNote}`;
 }
 
 export function getBotReply(input: string): {
@@ -170,55 +183,81 @@ export function getBotReply(input: string): {
 
   if (/^(hello|hi|hey|good\s+(morning|afternoon|evening))\b/.test(lower.trim())) {
     return {
-      text: "Hello! I can help with DDDP login, Performance Setup, Trackers, Maps, Data Visualizer, and more. Ask a question or search our Knowledge Hub and Learning Center.",
+      text: "Hello! I'm your DDDP Knowledge Hub assistant. Ask me “how to log in”, “how to set up performance monitoring”, “how to register a tracker”, or anything about Maps, Data Visualizer, RCC/APR/DPAT, and I’ll walk you through the steps.",
       articles: [],
       tutorials: [],
       escalate: false,
     };
   }
 
-  if (/how\s+to|tutorial|learn|training|walkthrough|step[\s-]?by[\s-]?step/.test(lower)) {
-    const tutorials = searchTutorials(input);
-    const articles = searchArticles(input);
-    if (tutorials.length > 0 || articles.length > 0) {
-      return {
-        text:
-          tutorials.length > 0
-            ? `I found these how-to tutorials in the Learning Center:${formatTutorialHints(tutorials)}\n\nRelated knowledge articles are listed below.`
-            : "I found these related knowledge articles. Check the Learning Center for step-by-step tutorials.",
-        articles,
-        tutorials,
-        escalate: false,
-      };
-    }
-  }
-
-  for (const rule of TOPIC_RULES) {
-    if (rule.pattern.test(lower)) {
-      const articles = mergeById(searchArticles(input), searchArticles(rule.search), 5);
-      const tutorials = mergeById(searchTutorials(input), searchTutorials(rule.search), 4);
-      return {
-        text: `${rule.text}${formatTutorialHints(tutorials)}`,
-        articles,
-        tutorials,
-        escalate: Boolean(rule.escalate) || articles.length === 0,
-      };
-    }
-  }
-
-  const articles = searchArticles(input);
-  const tutorials = searchTutorials(input);
-  if (articles.length > 0 || tutorials.length > 0) {
+  if (/^(thanks|thank\s+you|thx|cheers)\b/.test(lower.trim())) {
     return {
-      text: `I found these resources that may answer your question:${formatTutorialHints(tutorials)}`,
+      text: "You’re welcome! Ask me anything else about DDDP — I’m happy to help.",
+      articles: [],
+      tutorials: [],
+      escalate: false,
+    };
+  }
+
+  if (/ticket|support|escalat|agent|talk\s+to\s+(a\s+)?human|help\s*desk/.test(lower)) {
+    return {
+      text: "I can escalate this to our support team. Open the Tickets section to submit a request, or say “create ticket” and I’ll guide you there.",
+      articles: searchArticles("support ticket"),
+      tutorials: searchTutorials("support ticket"),
+      escalate: true,
+    };
+  }
+
+  let articles = searchArticles(input);
+  let tutorials = searchTutorials(input);
+
+  const rule = TOPIC_RULES.find((r) => r.pattern.test(lower));
+  if (rule) {
+    articles = mergeById(articles, searchArticles(rule.search), 5);
+    tutorials = mergeById(tutorials, searchTutorials(rule.search), 4);
+  }
+
+  if (tutorials.length > 0) {
+    const [top, ...rest] = tutorials;
+    const parts = [formatStepsBlock(top)];
+    if (rest.length > 0) parts.push(formatTutorialHints(rest, "Related Learning Center tutorials"));
+    if (articles.length > 0)
+      parts.push("Related knowledge articles are linked below — click one to open it.");
+    return {
+      text: parts.join("\n\n"),
       articles,
       tutorials,
       escalate: false,
     };
   }
 
+  if (articles.length > 0) {
+    const [top, ...rest] = articles;
+    const parts: string[] = [];
+    if (rule) parts.push(rule.text);
+    parts.push(`${top.title}\n${top.body}`);
+    if (rest.length > 0) {
+      parts.push("More related knowledge articles are linked below — click one to open it.");
+    }
+    return {
+      text: parts.join("\n\n"),
+      articles,
+      tutorials,
+      escalate: Boolean(rule?.escalate),
+    };
+  }
+
+  if (rule) {
+    return {
+      text: rule.text,
+      articles: [],
+      tutorials: [],
+      escalate: Boolean(rule.escalate) || true,
+    };
+  }
+
   return {
-    text: "I couldn’t find a confident answer in the Knowledge Hub. Try keywords like “Data Visualizer”, “Maps”, “Timeline”, or “password” — or open a support ticket.",
+    text: "I couldn’t find a confident answer in the Knowledge Hub. Try asking “how to log in”, “how to register a tracker”, “Data Visualizer”, “Maps”, or “password” — or open a support ticket.",
     articles: [],
     tutorials: [],
     escalate: true,
