@@ -58,6 +58,7 @@ export type ChatMessage = {
   text: string;
   at: string;
   articleIds?: string[];
+  tutorialIds?: string[];
 };
 
 export type ThreadMessage = {

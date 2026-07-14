@@ -63,7 +63,7 @@ const defaultState: HelpDeskState = {
     {
       id: "bot-0",
       role: "bot",
-      text: "Hi! I’m the DDDP assistant. Ask me about portals, data access, accounts, or support tickets.",
+      text: "Hi! I’m the DDDP assistant. Ask me about login, Performance Setup, RCC/DPAT reports, Trackers, or open a support ticket anytime.",
       at: new Date().toISOString(),
     },
   ],
