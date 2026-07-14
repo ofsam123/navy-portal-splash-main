@@ -29,15 +29,26 @@ import { getBotReply } from "@/lib/help-desk/chatbot";
 import { runGlobalSearch } from "@/lib/help-desk/search";
 import { KB_ARTICLES, TICKET_CATEGORIES, TUTORIALS } from "@/lib/help-desk/seed";
 import { notificationForRole, useHelpDesk } from "@/lib/help-desk/store";
-import type { HelpSection, KBArticle, Notification, TicketPriority, TicketStatus, UserRole } from "@/lib/help-desk/types";
+import type {
+  HelpSection,
+  KBArticle,
+  Notification,
+  TicketPriority,
+  TicketStatus,
+  UserRole,
+} from "@/lib/help-desk/types";
 import { cn } from "@/lib/utils";
 import { TutorialPlayer } from "@/components/help-desk/tutorial-player";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function DashboardSection() {
   const { state, isAdmin, broadcastEducationalAlert } = useHelpDesk();
-  const open = state.tickets.filter((t) => t.status === "open" || t.status === "in_progress").length;
-  const closed = state.tickets.filter((t) => t.status === "closed" || t.status === "resolved").length;
+  const open = state.tickets.filter(
+    (t) => t.status === "open" || t.status === "in_progress",
+  ).length;
+  const closed = state.tickets.filter(
+    (t) => t.status === "closed" || t.status === "resolved",
+  ).length;
   const kbTotal = Object.values(state.kbViews).reduce((a, b) => a + b, 0);
   const clientMessages = state.thread.filter((m) => m.from === "client").length;
   const topArticles = Object.entries(state.kbViews)
@@ -64,7 +75,10 @@ export function DashboardSection() {
         ) : (
           <Stat label="KB article views" value={String(kbTotal)} />
         )}
-        <Stat label="Unread alerts" value={String(state.notifications.filter((n) => !n.read).length)} />
+        <Stat
+          label="Unread alerts"
+          value={String(state.notifications.filter((n) => !n.read).length)}
+        />
       </div>
       {isAdmin && open > 0 && (
         <Panel>
@@ -83,9 +97,13 @@ export function DashboardSection() {
         </Panel>
       )}
       <Panel>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Popular knowledge base articles</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">
+          Popular knowledge base articles
+        </h3>
         {topArticles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No views yet. Browse the Knowledge Base to get started.</p>
+          <p className="text-sm text-muted-foreground">
+            No views yet. Browse the Knowledge Base to get started.
+          </p>
         ) : (
           <ul className="space-y-2">
             {topArticles.map(({ article, views }) => (
@@ -100,16 +118,16 @@ export function DashboardSection() {
       <Panel>
         <h3 className="text-sm font-semibold text-foreground mb-3">Response time (demo)</h3>
         <p className="text-sm text-muted-foreground">
-          Average first response: <span className="text-foreground font-medium">under 4 hours</span> on
-          business days. Live analytics connect when your organisation enables the backend API.
+          Average first response: <span className="text-foreground font-medium">under 4 hours</span>{" "}
+          on business days. Live analytics connect when your organisation enables the backend API.
         </p>
       </Panel>
       {isAdmin && (
         <Panel>
           <h3 className="text-sm font-semibold text-foreground mb-2">Educational alerts</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Notify clients about system updates or new features. Alerts can include short instructional
-            videos from the Learning Center.
+            Notify clients about system updates or new features. Alerts can include short
+            instructional videos from the Learning Center.
           </p>
           <div className="flex flex-wrap gap-2">
             {TUTORIALS.filter((t) => t.hasVideo && t.videoUrl).map((tutorial) => (
@@ -136,19 +154,12 @@ export function DashboardSection() {
   );
 }
 
-export function ClientHomeSection({
-  onNavigate,
-}: {
-  onNavigate: (section: HelpSection) => void;
-}) {
+export function ClientHomeSection({ onNavigate }: { onNavigate: (section: HelpSection) => void }) {
   const { state } = useHelpDesk();
   const [videoAlert, setVideoAlert] = useState<Notification | null>(null);
   const latestEducational = state.notifications.find(
     (n) =>
-      n.type === "educational" &&
-      !n.read &&
-      notificationForRole(n, state.user.role) &&
-      n.videoUrl,
+      n.type === "educational" && !n.read && notificationForRole(n, state.user.role) && n.videoUrl,
   );
 
   const quickLinks = [
@@ -219,8 +230,8 @@ export function ClientHomeSection({
           How can we help you today?
         </h2>
         <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-          Search documentation, follow tutorials, or reach our support team — all in one place.
-          Use the search bar at the top from any page.
+          Search documentation, follow tutorials, or reach our support team — all in one place. Use
+          the search bar at the top from any page.
         </p>
       </div>
 
@@ -266,7 +277,9 @@ export function ClientHomeSection({
           </ul>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Featured Learning Center tutorials</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">
+            Featured Learning Center tutorials
+          </h3>
           <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
             {TUTORIALS.filter((t) =>
               ["tut-38", "tut-40", "tut-37", "tut-34", "tut-42"].includes(t.id),
@@ -370,7 +383,9 @@ export function GlobalSearchSection({
                       className="w-full text-left px-4 py-3 hover:bg-[oklch(0.72_0.15_230/0.06)] transition-colors"
                     >
                       <span className="font-medium text-foreground">{a.title}</span>
-                      <span className="block text-xs text-muted-foreground mt-0.5">{a.excerpt}</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">
+                        {a.excerpt}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -403,20 +418,36 @@ export function GlobalSearchSection({
   );
 }
 
-export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: string }) {
+export function KnowledgeBaseSection({
+  initialQuery = "",
+  focusArticleId,
+}: {
+  initialQuery?: string;
+  focusArticleId?: { id: string; token: number } | null;
+}) {
   const { recordKbView } = useHelpDesk();
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<KBArticle | null>(null);
+  const [appliedInitialQuery, setAppliedInitialQuery] = useState(initialQuery);
+  const [appliedFocusToken, setAppliedFocusToken] = useState<number | null>(null);
+
+  if (initialQuery !== appliedInitialQuery) {
+    setAppliedInitialQuery(initialQuery);
+    setQuery(initialQuery);
+  }
+
+  if (focusArticleId && focusArticleId.token !== appliedFocusToken) {
+    setAppliedFocusToken(focusArticleId.token);
+    const article = KB_ARTICLES.find((a) => a.id === focusArticleId.id) ?? null;
+    setSelected(article);
+  }
 
   useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
+    if (selected) recordKbView(selected.id);
+  }, [selected, recordKbView]);
 
-  const categories = useMemo(
-    () => ["all", ...new Set(KB_ARTICLES.map((a) => a.category))],
-    [],
-  );
+  const categories = useMemo(() => ["all", ...new Set(KB_ARTICLES.map((a) => a.category))], []);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -494,10 +525,7 @@ export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: str
             <li key={article.id}>
               <button
                 type="button"
-                onClick={() => {
-                  recordKbView(article.id);
-                  setSelected(article);
-                }}
+                onClick={() => setSelected(article)}
                 className="w-full text-left px-4 py-3 hover:bg-accent/5 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -518,16 +546,36 @@ export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: str
   );
 }
 
-export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: string }) {
+export function LearningCenterSection({
+  initialQuery = "",
+  focusTutorialId,
+}: {
+  initialQuery?: string;
+  focusTutorialId?: { id: string; token: number } | null;
+}) {
   const [query, setQuery] = useState(initialQuery);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [activeVideo, setActiveVideo] = useState<{ title: string; summary: string; url: string } | null>(
-    null,
-  );
+  const [activeVideo, setActiveVideo] = useState<{
+    title: string;
+    summary: string;
+    url: string;
+  } | null>(null);
+  const [appliedInitialQuery, setAppliedInitialQuery] = useState(initialQuery);
+  const [appliedFocusToken, setAppliedFocusToken] = useState<number | null>(null);
 
-  useEffect(() => {
+  if (initialQuery !== appliedInitialQuery) {
+    setAppliedInitialQuery(initialQuery);
     setQuery(initialQuery);
-  }, [initialQuery]);
+  }
+
+  if (focusTutorialId && focusTutorialId.token !== appliedFocusToken) {
+    setAppliedFocusToken(focusTutorialId.token);
+    const tutorial = TUTORIALS.find((t) => t.id === focusTutorialId.id);
+    if (tutorial) {
+      setExpanded(tutorial.id);
+      setQuery("");
+    }
+  }
 
   const filtered = TUTORIALS.filter(
     (t) =>
@@ -546,7 +594,7 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder='Search how-to content…'
+          placeholder="Search how-to content…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9 bg-background/50"
@@ -554,7 +602,19 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
       </div>
       <ul className="space-y-3">
         {filtered.map((tut) => (
-          <li key={tut.id} className="help-desk-panel">
+          <li
+            key={tut.id}
+            id={`tutorial-${tut.id}`}
+            className={cn(
+              "help-desk-panel scroll-mt-24",
+              expanded === tut.id && "ring-1 ring-accent/40",
+            )}
+            ref={(el) => {
+              if (el && expanded === tut.id && focusTutorialId?.id === tut.id) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }}
+          >
             <button
               type="button"
               className="w-full text-left p-4"
@@ -620,12 +680,27 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
   );
 }
 
-export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
+const CHAT_SUGGESTIONS = [
+  "How to log in",
+  "How to reset my password",
+  "How to register a tracker",
+  "How to create a chart in Data Visualizer",
+];
+
+export function ChatbotSection({
+  onGoTickets,
+  onOpenArticle,
+  onOpenTutorial,
+}: {
+  onGoTickets: () => void;
+  onOpenArticle: (id: string) => void;
+  onOpenTutorial: (id: string) => void;
+}) {
   const { state, addChatMessage } = useHelpDesk();
   const [input, setInput] = useState("");
 
-  const send = () => {
-    const text = input.trim();
+  const send = (raw?: string) => {
+    const text = (raw ?? input).trim();
     if (!text) return;
     addChatMessage({ role: "user", text });
     setInput("");
@@ -639,11 +714,13 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
     if (reply.escalate) onGoTickets();
   };
 
+  const hasConversation = state.chat.some((m) => m.role === "user");
+
   return (
     <div className="space-y-4 flex flex-col h-[min(70vh,640px)]">
       <SectionHeader
         title="AI Assistant"
-        description="Answers DDDP/DPAT questions, searches the Knowledge Hub and Learning Center, and escalates to support."
+        description="Ask a “how to” question and get step-by-step instructions, with one-click links into the Knowledge Base and Learning Center."
       />
       <div className="help-desk-panel flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -651,55 +728,85 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
             <div
               key={msg.id}
               className={cn(
-                "max-w-[85%] rounded-xl px-3 py-2 text-sm",
+                "max-w-[90%] rounded-xl px-3 py-2 text-sm",
                 msg.role === "user"
                   ? "ml-auto bg-accent/20 text-foreground"
                   : "bg-muted/30 text-muted-foreground",
               )}
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
+              <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
               {msg.articleIds && msg.articleIds.length > 0 && (
-                <ul className="mt-2 space-y-1 border-t border-border/30 pt-2">
-                  <li className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Knowledge Base
-                  </li>
-                  {msg.articleIds.map((id) => {
-                    const a = KB_ARTICLES.find((x) => x.id === id);
-                    return a ? (
-                      <li key={id} className="text-xs text-accent">
-                        → {a.title}
-                      </li>
-                    ) : null;
-                  })}
-                </ul>
+                <div className="mt-2 border-t border-border/30 pt-2">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                    Knowledge Base — click to open
+                  </p>
+                  <ul className="space-y-1">
+                    {msg.articleIds.map((id) => {
+                      const a = KB_ARTICLES.find((x) => x.id === id);
+                      return a ? (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            onClick={() => onOpenArticle(id)}
+                            className="text-xs text-accent hover:underline text-left"
+                          >
+                            → {a.title}
+                          </button>
+                        </li>
+                      ) : null;
+                    })}
+                  </ul>
+                </div>
               )}
               {msg.tutorialIds && msg.tutorialIds.length > 0 && (
-                <ul className="mt-2 space-y-1 border-t border-border/30 pt-2">
-                  <li className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Learning Center
-                  </li>
-                  {msg.tutorialIds.map((id) => {
-                    const t = TUTORIALS.find((x) => x.id === id);
-                    return t ? (
-                      <li key={id} className="text-xs text-accent">
-                        → {t.title}
-                      </li>
-                    ) : null;
-                  })}
-                </ul>
+                <div className="mt-2 border-t border-border/30 pt-2">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                    Learning Center — click to open
+                  </p>
+                  <ul className="space-y-1">
+                    {msg.tutorialIds.map((id) => {
+                      const t = TUTORIALS.find((x) => x.id === id);
+                      return t ? (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            onClick={() => onOpenTutorial(id)}
+                            className="text-xs text-accent hover:underline text-left"
+                          >
+                            → {t.title}
+                          </button>
+                        </li>
+                      ) : null;
+                    })}
+                  </ul>
+                </div>
               )}
             </div>
           ))}
+          {!hasConversation && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {CHAT_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => send(s)}
+                  className="rounded-full border border-border/50 px-3 py-1.5 text-xs text-muted-foreground hover:text-accent hover:border-accent/40 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="border-t border-border/40 p-3 flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Ask about login, DPAT, Performance Setup, Trackers…"
+            placeholder="Ask “how to log in”, “register a tracker”, “Data Visualizer”…"
             className="bg-background/50"
           />
-          <Button type="button" size="icon" onClick={send} aria-label="Send">
+          <Button type="button" size="icon" onClick={() => send()} aria-label="Send">
             <Send className="h-4 w-4" />
           </Button>
         </div>
@@ -749,48 +856,59 @@ export function TicketsSection() {
         }
       />
       {!isAdmin && (
-      <form onSubmit={submit} className="help-desk-panel p-4 md:p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">New support request</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+        <form onSubmit={submit} className="help-desk-panel p-4 md:p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">New support request</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TICKET_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as TicketPriority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="desc">Description</Label>
+              <Textarea
+                id="desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                required
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TICKET_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Priority</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as TicketPriority)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="desc">Description</Label>
-            <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} required />
-          </div>
-        </div>
-        <Button type="submit">Submit ticket</Button>
-      </form>
+          <Button type="submit">Submit ticket</Button>
+        </form>
       )}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">
@@ -803,17 +921,25 @@ export function TicketsSection() {
         ) : (
           <ul className="divide-y divide-border/40 border border-border/40 rounded-xl help-desk-panel overflow-hidden">
             {visibleTickets.map((t) => (
-              <li key={t.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+              <li
+                key={t.id}
+                className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between"
+              >
                 <div>
                   <p className="font-medium text-foreground">{t.subject}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{t.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                    {t.description}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {isAdmin && <span className="text-foreground/80">{t.submittedBy} · </span>}
                     {t.category} · {t.priority} · {new Date(t.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 {isAdmin ? (
-                  <Select value={t.status} onValueChange={(v) => updateTicketStatus(t.id, v as TicketStatus)}>
+                  <Select
+                    value={t.status}
+                    onValueChange={(v) => updateTicketStatus(t.id, v as TicketStatus)}
+                  >
                     <SelectTrigger className="w-36 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -932,18 +1058,9 @@ export function NotificationsSection() {
           <li className="p-6 text-sm text-muted-foreground">No notifications.</li>
         ) : (
           visibleNotifications.map((n) => (
-            <li
-              key={n.id}
-              className={cn(
-                "px-4 py-3",
-                !n.read && "bg-accent/5",
-              )}
-            >
+            <li key={n.id} className={cn("px-4 py-3", !n.read && "bg-accent/5")}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div
-                  className="flex-1 cursor-pointer"
-                  onClick={() => markNotificationRead(n.id)}
-                >
+                <div className="flex-1 cursor-pointer" onClick={() => markNotificationRead(n.id)}>
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-foreground text-sm">{n.title}</p>
                     {n.type === "educational" && (
@@ -1020,7 +1137,9 @@ export function UsersSection() {
         <p className="text-sm text-muted-foreground">
           Signed in as{" "}
           <span className="font-medium text-foreground capitalize">{state.user.role}</span>
-          {isAdmin ? " — you can manage incoming client requests." : " — browse help resources or contact admin."}
+          {isAdmin
+            ? " — you can manage incoming client requests."
+            : " — browse help resources or contact admin."}
         </p>
       </Panel>
       <form
@@ -1050,7 +1169,8 @@ export function UsersSection() {
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Switch role (demo)</h3>
         <p className="text-xs text-muted-foreground">
-          In production, clients and admins would sign in separately. Use this to preview each experience.
+          In production, clients and admins would sign in separately. Use this to preview each
+          experience.
         </p>
         {roles.map((r) => (
           <button
