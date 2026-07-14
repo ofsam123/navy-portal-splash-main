@@ -95,9 +95,14 @@ const TOPIC_RULES: TopicRule[] = [
     search: "dpat dashboard tracker timeline progress",
   },
   {
-    pattern: /map|coordinate|geo|location\s+pin|set\s+coordinates/,
-    text: "Here’s how to set site coordinates on the map:",
-    search: "maps coordinates capture",
+    pattern: /map|coordinate|geo|location\s+pin|set\s+coordinates|event\s+layer|add\s+layer/,
+    text: "Here’s how to work with Maps — site coordinates and event layers:",
+    search: "maps coordinates event layer style",
+  },
+  {
+    pattern: /data\s+visualizer|create\s+a?\s*chart|chart\s+type|save\s+(diagram|chart|map)|main\s+dimensions|app\s+store/,
+    text: "Reporting with Data Visualizer and saving diagrams is covered here:",
+    search: "data visualizer chart save diagram reporting",
   },
   {
     pattern: /enrolment|enrollment|feedback\s+widget|tracker\s+dashboard|lists\s+tab/,
@@ -165,7 +170,7 @@ export function getBotReply(input: string): {
 
   if (/^(hello|hi|hey|good\s+(morning|afternoon|evening))\b/.test(lower.trim())) {
     return {
-      text: "Hello! I can help with DDDP login, Performance Setup, RCC/DPAT reports, Trackers, and more. Ask a question or search our Knowledge Hub and Learning Center.",
+      text: "Hello! I can help with DDDP login, Performance Setup, Trackers, Maps, Data Visualizer, and more. Ask a question or search our Knowledge Hub and Learning Center.",
       articles: [],
       tutorials: [],
       escalate: false,
@@ -213,7 +218,7 @@ export function getBotReply(input: string): {
   }
 
   return {
-    text: "I couldn’t find a confident answer in the Knowledge Hub. Try keywords like “DPAT”, “Performance Setup”, “Trackers”, or “password” — or open a support ticket.",
+    text: "I couldn’t find a confident answer in the Knowledge Hub. Try keywords like “Data Visualizer”, “Maps”, “Timeline”, or “password” — or open a support ticket.",
     articles: [],
     tutorials: [],
     escalate: true,

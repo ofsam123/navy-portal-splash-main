@@ -250,7 +250,7 @@ export function ClientHomeSection({
           <h3 className="text-sm font-semibold text-foreground mb-3">Popular knowledge topics</h3>
           <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
             {KB_ARTICLES.filter((a) =>
-              ["kb-17", "kb-20", "kb-23", "kb-15", "kb-9", "kb-19"].includes(a.id),
+              ["kb-26", "kb-28", "kb-20", "kb-23", "kb-17", "kb-15"].includes(a.id),
             ).map((a) => (
               <li key={a.id}>
                 <button
@@ -269,7 +269,7 @@ export function ClientHomeSection({
           <h3 className="text-sm font-semibold text-foreground mb-3">Featured Learning Center tutorials</h3>
           <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
             {TUTORIALS.filter((t) =>
-              ["tut-6", "tut-33", "tut-34", "tut-37", "tut-17"].includes(t.id),
+              ["tut-38", "tut-40", "tut-37", "tut-34", "tut-42"].includes(t.id),
             ).map((t) => (
               <li key={t.id}>
                 <button
@@ -461,7 +461,7 @@ export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: str
     <div className="space-y-4">
       <SectionHeader
         title="Knowledge Base"
-        description="DDDP/DPAT articles, manuals, guides, and FAQs — login, performance, RCC, trackers, and national dashboards."
+        description="DDDP/DPAT articles, manuals, guides, and FAQs — login, performance, trackers, Maps, and Data Visualizer reporting."
       />
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -541,7 +541,7 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
     <div className="space-y-4">
       <SectionHeader
         title="How-To Learning Center"
-        description="Step-by-step DDDP tutorials: Performance Setup, RCC/DPAT, Tracker Capture programs, maps, dashboard, and timeline progress updates."
+        description="Step-by-step DDDP tutorials: Tracker Capture, Maps event layers, Data Visualizer charts, dashboard, and timeline progress."
       />
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
