@@ -245,22 +245,45 @@ export function ClientHomeSection({
         ))}
       </div>
 
-      <div className="max-w-3xl mx-auto">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Popular topics</h3>
-        <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
-          {KB_ARTICLES.slice(0, 4).map((a) => (
-            <li key={a.id}>
-              <button
-                type="button"
-                onClick={() => onNavigate("knowledge")}
-                className="w-full text-left px-4 py-3 text-sm hover:bg-[oklch(0.45_0.14_250/0.05)] transition-colors"
-              >
-                <span className="font-medium text-foreground">{a.title}</span>
-                <span className="block text-muted-foreground text-xs mt-0.5">{a.excerpt}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Popular knowledge topics</h3>
+          <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
+            {KB_ARTICLES.filter((a) =>
+              ["kb-26", "kb-28", "kb-20", "kb-23", "kb-17", "kb-15"].includes(a.id),
+            ).map((a) => (
+              <li key={a.id}>
+                <button
+                  type="button"
+                  onClick={() => onNavigate("knowledge")}
+                  className="w-full text-left px-4 py-3 text-sm hover:bg-[oklch(0.45_0.14_250/0.05)] transition-colors"
+                >
+                  <span className="font-medium text-foreground">{a.title}</span>
+                  <span className="block text-muted-foreground text-xs mt-0.5">{a.excerpt}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Featured Learning Center tutorials</h3>
+          <ul className="help-desk-panel divide-y divide-[var(--help-border)] overflow-hidden">
+            {TUTORIALS.filter((t) =>
+              ["tut-38", "tut-40", "tut-37", "tut-34", "tut-42"].includes(t.id),
+            ).map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => onNavigate("learning")}
+                  className="w-full text-left px-4 py-3 text-sm hover:bg-[oklch(0.45_0.14_250/0.05)] transition-colors"
+                >
+                  <span className="font-medium text-foreground">{t.title}</span>
+                  <span className="block text-muted-foreground text-xs mt-0.5">{t.summary}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {videoAlert?.videoUrl && (
@@ -438,7 +461,7 @@ export function KnowledgeBaseSection({ initialQuery = "" }: { initialQuery?: str
     <div className="space-y-4">
       <SectionHeader
         title="Knowledge Base"
-        description="Articles, manuals, guides, FAQs, and searchable documentation."
+        description="DDDP/DPAT articles, manuals, guides, and FAQs — login, performance, trackers, Maps, and Data Visualizer reporting."
       />
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -518,7 +541,7 @@ export function LearningCenterSection({ initialQuery = "" }: { initialQuery?: st
     <div className="space-y-4">
       <SectionHeader
         title="How-To Learning Center"
-        description='Search "How To" tutorials, videos, and downloadable training materials.'
+        description="Step-by-step DDDP tutorials: Tracker Capture, Maps event layers, Data Visualizer charts, dashboard, and timeline progress."
       />
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -611,6 +634,7 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
       role: "bot",
       text: reply.text,
       articleIds: reply.articles.map((a) => a.id),
+      tutorialIds: reply.tutorials.map((t) => t.id),
     });
     if (reply.escalate) onGoTickets();
   };
@@ -618,8 +642,8 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
   return (
     <div className="space-y-4 flex flex-col h-[min(70vh,640px)]">
       <SectionHeader
-        title="AI Chatbot"
-        description="Answers common questions, searches the knowledge base, and escalates to support."
+        title="AI Assistant"
+        description="Answers DDDP/DPAT questions, searches the Knowledge Hub and Learning Center, and escalates to support."
       />
       <div className="help-desk-panel flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -633,14 +657,32 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
                   : "bg-muted/30 text-muted-foreground",
               )}
             >
-              <p>{msg.text}</p>
+              <p className="whitespace-pre-wrap">{msg.text}</p>
               {msg.articleIds && msg.articleIds.length > 0 && (
                 <ul className="mt-2 space-y-1 border-t border-border/30 pt-2">
+                  <li className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Knowledge Base
+                  </li>
                   {msg.articleIds.map((id) => {
                     const a = KB_ARTICLES.find((x) => x.id === id);
                     return a ? (
                       <li key={id} className="text-xs text-accent">
                         → {a.title}
+                      </li>
+                    ) : null;
+                  })}
+                </ul>
+              )}
+              {msg.tutorialIds && msg.tutorialIds.length > 0 && (
+                <ul className="mt-2 space-y-1 border-t border-border/30 pt-2">
+                  <li className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Learning Center
+                  </li>
+                  {msg.tutorialIds.map((id) => {
+                    const t = TUTORIALS.find((x) => x.id === id);
+                    return t ? (
+                      <li key={id} className="text-xs text-accent">
+                        → {t.title}
                       </li>
                     ) : null;
                   })}
@@ -654,7 +696,7 @@ export function ChatbotSection({ onGoTickets }: { onGoTickets: () => void }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Ask about portals, data, accounts…"
+            placeholder="Ask about login, DPAT, Performance Setup, Trackers…"
             className="bg-background/50"
           />
           <Button type="button" size="icon" onClick={send} aria-label="Send">
